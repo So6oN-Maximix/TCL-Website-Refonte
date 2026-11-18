@@ -1,3 +1,9 @@
+<script lang="ts">
+    import type { PageProps } from "./$types";
+
+    let { data }: PageProps = $props();
+</script>
+
 <section class="page-hero">
 	<svg class="court-lines" viewBox="0 0 1100 260" preserveAspectRatio="xMidYMid slice">
 		<rect x="750" y="10" width="320" height="240" fill="none" stroke="#F6F4EC" stroke-width="2"/>
@@ -16,10 +22,10 @@
 <section class="profile-top">
 	<div class="wrap">
 		<div class="profile-header">
-			<div class="avatar" id="profile-avatar">ML</div>
+			<div class="avatar" id="profile-avatar">{(data.user.firstName[0] + data.user.lastName[0]).toUpperCase()}</div>
 			<div>
 				<div class="profile-name-row">
-					<span class="profile-name" id="profile-name">Max LEOST</span>
+					<span class="profile-name" id="profile-name">{data.user.firstName} {data.user.lastName.toUpperCase()}</span>
 					<span class="role-badge" id="role-badge">Licencié</span>
 				</div>
 				<div class="profile-meta" id="profile-meta">Licencié depuis 2021 · Membre actif</div>

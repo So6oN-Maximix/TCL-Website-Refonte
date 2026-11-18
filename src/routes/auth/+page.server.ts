@@ -2,6 +2,7 @@ import { fail, redirect } from "@sveltejs/kit";
 import { prisma } from "#lib/server/prisma.ts";
 import bcrypt from "bcrypt";
 import type { PageServerLoad, Actions } from "./$types";
+import { startSession } from "#lib/server/session.ts";
 
 const DUMMY_HASH = bcrypt.hashSync("dummy-password", 12);
 
@@ -12,8 +13,8 @@ export const actions: Actions = {
 		const firstName = String(formData.get("firstName") ?? "").trim();
 		const lastName = String(formData.get("lastName") ?? "").trim();
 		const email = String(formData.get("email") ?? "").trim().toLowerCase();
-        const licence = String(formData.get("licence"));
-        const phone = String(formData.get("phone"));
+        const licence = String(formData.get("licence") ?? "").trim() || null;
+		const phone = String(formData.get("phone") ?? "").trim() || null;
 		const password = String(formData.get("password") ?? "");
 		const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
@@ -38,13 +39,7 @@ export const actions: Actions = {
 				select: { id: true }
 			});
 
-            cookies.set("user_id", String(userAddedId.id), {
-                path: "/",
-                httpOnly: true,
-                sameSite: "lax",
-                secure: process.env.NODE_ENV === "production",
-                maxAge: 60 * 60 * 24
-            });
+            startSession(cookies, userAddedId.id);
 		} catch (error) {
 			if (typeof error === "object" && error !== null && "code" in error && error.code === "P2002") return fail(400, { error: "Un compte existe déjà avec cet e-mail." });
 			throw error;
@@ -65,15 +60,10 @@ export const actions: Actions = {
             const ok = await bcrypt.compare(password, user ? user.password : DUMMY_HASH);
             if (!user || !ok) return fail(400, { error: "Utilisateur ou mot de passe incorrect" });
 
-            cookies.set("user_id", String(user.id), {
-                path: "/",
-                httpOnly: true,
-                sameSite: "lax",
-                secure: process.env.NODE_ENV === "production",
-                maxAge: 60 * 60 * 24
-            });
+            startSession(cookies, user.id);
+			console.log("LOGIN ok, session pour l'utilisateur", user.id);
         } catch (error) { throw error; }
-
+		
 		redirect(303, "/profile");
     }
 };
