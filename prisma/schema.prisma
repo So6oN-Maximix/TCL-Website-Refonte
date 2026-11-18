@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/lib/generated/prisma"
+}
+
+datasource db {
+	provider = "postgresql"
+}
+
+model User {
+	id        		 Int       @id @default(autoincrement())
+	sexe			 Boolean   @default(true)
+	email     		 String    @unique
+	password  		 String
+	firstName    		 String
+	lastName       	 	 String
+	licence   		 String?
+	phone			 String?
+	role      		 Role      @default(VISITER)
+	bookings  		 Booking[]
+	poste			 Poste	   @default(VISITEUR)
+	cotisationPayed  Boolean   @default(false)
+	teamId    		 Int?
+	team      		 Team?     @relation(fields: [teamId], references: [id])
+	memberSince		 DateTime? @default(now())
+	createdAt 		 DateTime  @default(now())
+	updatedAt 		 DateTime  @updatedAt
+}
+
+model Court {
+	id       			Int       @id @default(autoincrement())
+	nom      			String
+	type     			CourtType @default(INTERIEUR)
+	bookings 			Booking[]
+	indisponibilites	Indisponibilite[]
+}
+
+model Booking {
+	id         Int      @id @default(autoincrement())
+	courtId    Int
+	court      Court    @relation(fields: [courtId], references: [id])
+	userId     Int
+	user       User     @relation(fields: [userId], references: [id])
+	dateDebut  DateTime
+	statut     String   @default("confirmee")
+	bookedAt   DateTime @default(now())
+
+	@@unique([courtId, dateDebut])
+}
+
+model Indisponibilite {
+	id         Int      @id @default(autoincrement())
+	courtId    Int
+	court      Court    @relation(fields: [courtId], references: [id])
+	dateDebut  DateTime
+	raison     String?
+}
+
+model News {
+	id              Int      @id @default(autoincrement())
+	titre           String
+	contenu         String
+	categorie       String
+	adminId			Int
+	datePublication DateTime @default(now())
+}
+
+model Team {
+	id        Int     @id @default(autoincrement())
+	nom       String  @unique
+	categorie String
+	resultats String?
+	members   User[]
+}
+
+model Tournament {
+	id                   Int      @id @default(autoincrement())
+	nom                  String
+	date                 DateTime
+	description          String?
+	inscriptionsOuvertes Boolean  @default(true)
+}
+
+
+enum Role {
+	VISITER
+	ATTENTE_MEMBER
+	MEMBER
+	ADMIN
+}
+
+enum Poste {
+	DEVELOPPEUR
+	PRESIDENT
+	PRESIDENTE
+	VICE_PRESIDENT
+	VICE_PRESIDENTE
+	TRESORIER
+	TRESORIERE
+	SECRETAIRE
+	COACH
+	JOUEUR
+	VISITEUR
+}
+
+enum CourtType {
+	INTERIEUR
+	EXTERIEUR
+}
