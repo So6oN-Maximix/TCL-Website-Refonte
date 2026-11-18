@@ -11,6 +11,10 @@
 	const into = { duration: 180, delay: 180 };
 </script>
 
+<svelte:head>
+    <title>Connexion - TCL</title>
+</svelte:head>
+
 <section class="page-hero">
 	<svg class="court-lines" viewBox="0 0 1100 260" preserveAspectRatio="xMidYMid slice">
 		<rect x="750" y="10" width="320" height="240" fill="none" stroke="#F6F4EC" stroke-width="2"/>

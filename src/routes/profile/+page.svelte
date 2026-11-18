@@ -14,6 +14,10 @@
     }
 </script>
 
+<svelte:head>
+    <title>Mon Profil - TCL</title>
+</svelte:head>
+
 <section class="page-hero">
 	<svg class="court-lines" viewBox="0 0 1100 260" preserveAspectRatio="xMidYMid slice">
 		<rect x="750" y="10" width="320" height="240" fill="none" stroke="#F6F4EC" stroke-width="2"/>
@@ -50,16 +54,16 @@
         {#if IS_MEMBER.includes(data.user.role)}
 		<div class="profile-stats">
 			<div class="profile-stat">
-				<div class="num">14</div>
+				<div class="num">XXX</div>
 				<div class="label">Réservations cette saison</div>
 			</div>
 			<div class="profile-stat">
-				<div class="num">3</div>
+				<div class="num">XXX</div>
 				<div class="label">Créneaux à venir</div>
 			</div>
 			<div class="profile-stat">
-				<div class="num">5</div>
-				<div class="label">Années de licence</div>
+				<div class="num">{data.user.memberSince?.getFullYear()}</div>
+				<div class="label">Arrivée au club</div>
 			</div>
 			<div class="profile-stat profile-stat-status">
 				<div class="num">À jour</div>
@@ -104,7 +108,7 @@
 			<div>
 				<div class="block-head">
 					<h3>Mes réservations</h3>
-					<span class="block-count">3 à venir</span>
+					<span class="block-count">XXX à venir</span>
 				</div>
 
 				<div class="reservations-group">
@@ -228,19 +232,19 @@
 
 		<div class="profile-stats admin-stats">
 			<div class="profile-stat">
-				<div class="num">42</div>
+				<div class="num">XXX</div>
 				<div class="label">Licenciés actifs</div>
 			</div>
 			<div class="profile-stat">
-				<div class="num">5</div>
+				<div class="num">XXX</div>
 				<div class="label">Visiteurs en attente</div>
 			</div>
 			<div class="profile-stat">
-				<div class="num">9</div>
+				<div class="num">XXX</div>
 				<div class="label">Réservations aujourd'hui</div>
 			</div>
 			<div class="profile-stat">
-				<div class="num">2</div>
+				<div class="num">XXX</div>
 				<div class="label">Admins</div>
 			</div>
 		</div>

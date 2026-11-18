@@ -1,3 +1,7 @@
+<svelte:head>
+    <title>TCL</title>
+</svelte:head>
+
 <section class="hero">
 	<svg class="court-lines" viewBox="0 0 1100 500" preserveAspectRatio="xMidYMid slice">
 		<rect x="700" y="60" width="380" height="420" fill="none" stroke="#F6F4EC" stroke-width="2"/>

@@ -6,14 +6,14 @@
 	import Header from "#lib/components/Header.svelte";
 	import Toast from "#lib/components/Toast.svelte";
 
-	let { children }: LayoutProps = $props();
+	let { data, children }: LayoutProps = $props();
 </script>
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<Header />
+<Header user={data.user} />
 
 <main>
 	{@render children()}
