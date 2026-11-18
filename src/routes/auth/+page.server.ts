@@ -3,6 +3,7 @@ import { prisma } from "#lib/server/prisma.ts";
 import bcrypt from "bcrypt";
 import type { PageServerLoad, Actions } from "./$types";
 import { startSession } from "#lib/server/session.ts";
+import { formatPhoneGlobal } from "#lib/utils.ts";
 
 const DUMMY_HASH = bcrypt.hashSync("dummy-password", 12);
 
@@ -34,7 +35,7 @@ export const actions: Actions = {
 					firstName,
 					lastName,
 					licence,
-					phone
+					phone: formatPhoneGlobal(phone)
 				},
 				select: { id: true }
 			});

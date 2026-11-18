@@ -1,7 +1,17 @@
 <script lang="ts">
     import type { PageProps } from "./$types";
+    import { ROLE_LABELS, IS_MEMBER } from "#lib/constants.ts";
+    import { toasts } from "#lib/stores/toast.ts";
+	import { enhance } from "$app/forms";
 
     let { data }: PageProps = $props();
+
+    let showModifyModal = $state(false);
+
+    type ToastType = "success" | "error" | "info";
+    function showToast(msg: string, type = "success") {
+        toasts.send(msg, type as ToastType);
+    }
 </script>
 
 <section class="page-hero">
@@ -22,19 +32,23 @@
 <section class="profile-top">
 	<div class="wrap">
 		<div class="profile-header">
-			<div class="avatar" id="profile-avatar">{(data.user.firstName[0] + data.user.lastName[0]).toUpperCase()}</div>
+			<div class="avatar">{(data.user.firstName[0] + data.user.lastName[0]).toUpperCase()}</div>
 			<div>
 				<div class="profile-name-row">
-					<span class="profile-name" id="profile-name">{data.user.firstName} {data.user.lastName.toUpperCase()}</span>
-					<span class="role-badge" id="role-badge">Licencié</span>
+					<span class="profile-name">{data.user.firstName} {data.user.lastName.toUpperCase()}</span>
+					<span class="role-badge">{ROLE_LABELS[data.user.role]}</span>
 				</div>
-				<div class="profile-meta" id="profile-meta">Licencié depuis 2021 · Membre actif</div>
+                {#if IS_MEMBER.includes(data.user.role)}
+				<div class="profile-meta">Licencié depuis {data.user.memberSince?.getFullYear()} · Membre actif</div>
+                {/if}
 			</div>
-			<a href="/reservation" class="btn-primary profile-cta" data-role-visible="MEMBER,ADMIN">Réserver un créneau</a>
+            {#if IS_MEMBER.includes(data.user.role)}
+			<a href="/reservation" class="btn-primary profile-cta">Réserver un créneau</a>
+            {/if}
 		</div>
 
-		<!-- Visible pour les licenciés (membres et admins) -->
-		<div class="profile-stats" data-role-visible="MEMBER,ADMIN">
+        {#if IS_MEMBER.includes(data.user.role)}
+		<div class="profile-stats">
 			<div class="profile-stat">
 				<div class="num">14</div>
 				<div class="label">Réservations cette saison</div>
@@ -52,15 +66,15 @@
 				<div class="label">Cotisation 2025–2026</div>
 			</div>
 		</div>
-
-		<!-- Visible uniquement pour les visiteurs (pas encore licenciés) -->
-		<div class="visitor-banner" data-role-visible="VISITER" hidden>
+        {:else}
+		<div class="visitor-banner">
 			<div>
 				<h3>Vous n'êtes pas encore licencié·e</h3>
 				<p>Créez votre dossier de licence pour accéder aux réservations de courts, aux tarifs adhérents et à la vie du club.</p>
 			</div>
 			<a href="/" class="btn-primary">Devenir membre licencié</a>
 		</div>
+        {/if}
 	</div>
 </section>
 
@@ -70,20 +84,24 @@
 			<div id="personal-info">
 				<div class="block-head">
 					<h3>Informations</h3>
-					<button type="button" class="btn-outline btn-small">Modifier</button>
+					<button type="button" class="btn-outline btn-small" onclick={() => showModifyModal = true}>Modifier</button>
 				</div>
 				<div class="info-list">
-					<div class="info-row"><span class="k">Prénom</span><span class="v">...</span></div>
-					<div class="info-row"><span class="k">Nom</span><span class="v">...</span></div>
-					<div class="info-row"><span class="k">E-mail</span><span class="v">...</span></div>
-					<div class="info-row"><span class="k">Téléphone</span><span class="v">...</span></div>
-					<div class="info-row" data-role-visible="MEMBER,ADMIN"><span class="k">N° de licence FFT</span><span class="v">...</span></div>
-					<div class="info-row" data-role-visible="MEMBER,ADMIN"><span class="k">Cotisation 2025-2026</span><span class="v">...</span></div>
-					<div class="info-row" data-role-visible="VISITER" hidden><span class="k">Statut</span><span class="v badge-pending">Compte visiteur</span></div>
+					<div class="info-row"><span class="k">Prénom</span><span class="v">{data.user.firstName}</span></div>
+					<div class="info-row"><span class="k">Nom</span><span class="v">{data.user.lastName.toUpperCase()}</span></div>
+					<div class="info-row"><span class="k">E-mail</span><span class="v">{data.user.email}</span></div>
+					<div class="info-row"><span class="k">Téléphone</span><span class="v" class:empty={!data.user.phone}>{data.user.phone ?? "Pas de téléphone"}</span></div>
+                    {#if IS_MEMBER.includes(data.user.role)}
+					<div class="info-row"><span class="k">N° de licence FFT</span><span class="v" class:empty={!data.user.licence}>{data.user.licence ?? "Pas de numéro de licence"}</span></div>
+					<div class="info-row"><span class="k">Cotisation 2025-2026</span><span class="v">{data.user.cotisationPayed ? "A jour" : "En attente"}</span></div>
+                    {:else}
+					<div class="info-row"><span class="k">Statut</span><span class="v badge-pending">Compte visiteur</span></div>
+                    {/if}
 				</div>
 			</div>
 
-			<div data-role-visible="MEMBER,ADMIN">
+            {#if IS_MEMBER.includes(data.user.role)}
+			<div>
 				<div class="block-head">
 					<h3>Mes réservations</h3>
 					<span class="block-count">3 à venir</span>
@@ -97,6 +115,7 @@
 					<div class="info-list"></div>
 				</div>
 			</div>
+            {/if}
 
 			<!-- Modale de confirmation d'annulation -->
 			<div class="modal-overlay" id="cancel-booking-modal-overlay" hidden>
@@ -119,30 +138,43 @@
 				</div>
 			</div>
 
-			<!-- Modale d'édition des informations du compte -->
-			<div class="modal-overlay" id="edit-profile-modal-overlay" hidden>
-				<div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-profile-modal-title">
+			{#if showModifyModal}
+			<div class="modal-overlay">
+				<div class="modal" role="dialog" aria-modal="true">
 					<div class="modal-head">
 						<h3 id="edit-profile-modal-title">Modifier mes informations</h3>
-						<button type="button" class="modal-close" id="edit-profile-modal-close" aria-label="Fermer">&times;</button>
+						<button type="button" class="modal-close" id="edit-profile-modal-close" aria-label="Fermer" onclick={() => showModifyModal = false}>&times;</button>
 					</div>
 
-					<form id="edit-profile-form">
+					<form method="POST" action="?/saveInfos" use:enhance={() => {
+                        return async ({ result, update }) => {
+                            if (result.type === "success") {
+                                showModifyModal = false;
+                                showToast("Informations enregistrées");
+                            }
+                            else if (result.type === "failure") {
+                                const data = result.data as { error?: string } | undefined;
+                                const errorMessage = data?.error || "Erreur server";
+                                showToast(errorMessage, "error");
+                            }
+                            update();
+                        };
+                    }}>
 						<div class="form-group">
-							<label for="edit-prenom">Prénom</label>
-							<input type="text" id="edit-prenom" name="prenom" required>
+							<label for="editFirstName">Prénom</label>
+							<input type="text" id="editFirstName" name="firstName" value={data.user.firstName} required>
 						</div>
 						<div class="form-group">
-							<label for="edit-nom">Nom</label>
-							<input type="text" id="edit-nom" name="nom" required>
+							<label for="editLastName">Nom</label>
+							<input type="text" id="editLastName" name="lastName" value={data.user.lastName.toUpperCase()} required>
 						</div>
 						<div class="form-group">
-							<label for="edit-email">E-mail</label>
-							<input type="email" id="edit-email" name="email" required>
+							<label for="editEmail">E-mail</label>
+							<input type="email" id="editEmail" name="email" value={data.user.email} required>
 						</div>
 						<div class="form-group">
-							<label for="edit-phone">Téléphone</label>
-							<input type="tel" id="edit-phone" name="phone" required>
+							<label for="editPhone">Téléphone</label>
+							<input type="tel" id="editPhone" name="phone" value={data.user.phone} required>
 						</div>
 
 						<p class="modal-note">Le numéro de licence FFT, le rôle et le statut de cotisation ne sont modifiables que par le bureau du club.</p>
@@ -150,14 +182,15 @@
 
 						<div class="modal-actions">
 							<button type="submit" class="btn-primary" id="save-profile-btn">Enregistrer</button>
-							<button type="button" class="btn-outline btn-small" id="edit-profile-modal-cancel">Annuler</button>
+							<button type="button" class="btn-outline btn-small" onclick={() => showModifyModal = false}>Annuler</button>
 						</div>
 					</form>
 				</div>
 			</div>
+            {/if}
 
-			<!-- Visible uniquement pour les visiteurs -->
-			<div data-role-visible="VISITER" hidden>
+            {#if data.user.role === "VISITER"}
+			<div>
 				<div class="block-head">
 					<h3>Réservations</h3>
 				</div>
@@ -165,11 +198,13 @@
 					<p>La réservation de courts est réservée aux membres licenciés du club. Une fois votre dossier de licence validé, vous retrouverez ici vos créneaux.</p>
 				</div>
 			</div>
+            {/if}
 		</div>
 	</div>
 </section>
 
-<section class="section-tinted" data-role-visible="ADMIN" hidden id="administration">
+{#if data.user.role === "ADMIN"}
+<section class="section-tinted">
 	<div class="wrap">
 		<div class="block-head">
 			<h3>Administration du club</h3>
@@ -221,6 +256,7 @@
 		</div>
 	</div>
 </section>
+{/if}
 
 <section>
 	<div class="wrap">
@@ -247,3 +283,10 @@
 		</form>
 	</div>
 </section>
+
+<style>
+    .v.empty {
+        font-style: italic;
+        opacity: 0.6;
+    }
+</style>
