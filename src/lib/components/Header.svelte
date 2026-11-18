@@ -23,7 +23,7 @@
 				<a href="/" class:active={page.url.pathname === "/"}>Accueil</a>
 				<a href="/" class:active={page.url.pathname === "/"}>École de tennis</a>
 				<a href="/" class:active={page.url.pathname === "/"}>Actualités</a>
-				<a href="/" class:active={page.url.pathname === "/"}>Equipe</a>
+				<a href="/team" class:active={page.url.pathname === "/team"}>Equipe</a>
 				<a href="/" class:active={page.url.pathname === "/"}>Contact</a>
 			</div>
 			<div class="nav-actions">
