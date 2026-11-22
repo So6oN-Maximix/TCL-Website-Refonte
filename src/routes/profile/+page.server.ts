@@ -5,6 +5,7 @@ import { formatPhoneGlobal, formatPhoneUX } from "#lib/utils.ts";
 
 export const load: PageServerLoad = async ({ locals }) => {
     if (!locals.user) throw error(403, "Accès refusé");
+    console.log(locals.user);
 
     return { user: { ...locals.user, phone: formatPhoneUX(locals.user.phone) } };
 };

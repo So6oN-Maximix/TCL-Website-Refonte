@@ -4,7 +4,6 @@ import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "$app/env/private";
 
 export const handle: Handle = async ({ event, resolve }) => {
-    console.log("HOOK", event.request.method, event.url.pathname, "token:", !!event.cookies.get("token"));
     event.locals.user = null;
 
     const token = event.cookies.get("token");
@@ -15,8 +14,8 @@ export const handle: Handle = async ({ event, resolve }) => {
                 where: { id: userId },
                 omit: { password: true, updatedAt: true, createdAt: true }
             });
-        } catch (e) {
-            console.error("jwt invalide :", e);
+        } catch (err) {
+            console.error("jwt invalide :", err);
             event.cookies.delete("token", { path: "/" });
         }
     }

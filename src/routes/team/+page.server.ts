@@ -13,16 +13,16 @@ const POSTE_RANK: Record<string, number> = {
 export const load: PageServerLoad = async ({}) => {
     try {
         const admins = await prisma.user.findMany({
-            where: { role: "ADMIN" },
-            select: { firstName: true, lastName: true, email: true, poste: true }
+            where: { section: { } },
+            select: { firstName: true, lastName: true, email: true, role: true }
         });
 
         const byRank = (a: typeof admins[number], b: typeof admins[number]) =>
-            (POSTE_RANK[a.poste] ?? 99) - (POSTE_RANK[b.poste] ?? 99) ||
+            (POSTE_RANK[a.role] ?? 99) - (POSTE_RANK[b.role] ?? 99) ||
             a.lastName.localeCompare(b.lastName);
 
-        const coaches = admins.filter(a => a.poste === "COACH").sort(byRank);
-        const bureau = admins.filter(a => a.poste !== "COACH").sort(byRank);
+        const coaches = admins.filter(a => a.role === "COACH").sort(byRank);
+        const bureau = admins.filter(a => a.role !== "COACH").sort(byRank);
 
         return { bureau, coaches };
     } catch (error) { throw error }

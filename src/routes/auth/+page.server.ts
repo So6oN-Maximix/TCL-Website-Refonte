@@ -1,7 +1,7 @@
 import { fail, redirect } from "@sveltejs/kit";
 import { prisma } from "#lib/server/prisma.ts";
 import bcrypt from "bcrypt";
-import type { PageServerLoad, Actions } from "./$types";
+import type { Actions } from "./$types";
 import { startSession } from "#lib/server/session.ts";
 import { formatPhoneGlobal } from "#lib/utils.ts";
 
@@ -35,7 +35,8 @@ export const actions: Actions = {
 					firstName,
 					lastName,
 					licence,
-					phone: formatPhoneGlobal(phone)
+					phone: formatPhoneGlobal(phone),
+					role: "VISITEUR"
 				},
 				select: { id: true }
 			});

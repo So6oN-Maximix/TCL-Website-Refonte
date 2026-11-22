@@ -1,8 +1,17 @@
-export const ROLE_LABELS = {
-	VISITER: "Visiteur",
-	ATTENTE_MEMBER: "En Attente",
-	MEMBER: "Licencié",
-	ADMIN: "Administrateur",
+import type { SectionRole } from "#lib/generated/prisma/client.ts";
+
+export const ROLE_LABELS: Record<SectionRole, string> = {
+	DEVELOPPEUR: "Administrateur",
+	PRESIDENT: "Administrateur",
+	PRESIDENTE: "Administrateur",
+	VICE_PRESIDENT: "Administrateur",
+	VICE_PRESIDENTE: "Administrateur",
+	TRESORIER: "Administrateur",
+	TRESORIERE: "Administrateur",
+	SECRETAIRE: "Administrateur",
+	COACH: "Administrateur",
+	MEMBRE: "Licencié",
+	VISITEUR: "Visiteur"
 };
 
-export const IS_MEMBER = ["MEMBER", "ADMIN"];
+export const NOT_MEMBER = ["VISITEUR"];

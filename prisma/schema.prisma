@@ -8,23 +8,31 @@ datasource db {
 }
 
 model User {
-	id        		 Int       @id @default(autoincrement())
-	sexe			 Boolean   @default(true)
-	email     		 String    @unique
+	id        		 Int   		       @id @default(autoincrement())
+	sexe			 Boolean  		   @default(true)
+	email     		 String    		   @unique
 	password  		 String
-	firstName    		 String
-	lastName       	 	 String
+	firstName    	 String
+	lastName       	 String
 	licence   		 String?
 	phone			 String?
-	role      		 Role      @default(VISITER)
 	bookings  		 Booking[]
-	poste			 Poste	   @default(VISITEUR)
-	cotisationPayed  Boolean   @default(false)
+	cotisationPayed  Boolean   		   @default(false)
 	teamId    		 Int?
-	team      		 Team?     @relation(fields: [teamId], references: [id])
-	memberSince		 DateTime? @default(now())
-	createdAt 		 DateTime  @default(now())
-	updatedAt 		 DateTime  @updatedAt
+	team      		 Team?     		   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+    indisponibilites Indisponibilite[]
+	role			 SectionRole 	   @default(VISITEUR)
+    section          Section?          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+	sectionId		 Int?
+	memberSince		 DateTime? 		   @default(now())
+	createdAt 		 DateTime  		   @default(now())
+	updatedAt 		 DateTime 		   @updatedAt
+}
+
+model Section {
+	id      Int             @id @default(autoincrement())
+	nom     String          @unique
+	members User[]
 }
 
 model Court {
@@ -38,9 +46,9 @@ model Court {
 model Booking {
 	id         Int      @id @default(autoincrement())
 	courtId    Int
-	court      Court    @relation(fields: [courtId], references: [id])
+	court      Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
 	userId     Int
-	user       User     @relation(fields: [userId], references: [id])
+	user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 	dateDebut  DateTime
 	statut     String   @default("confirmee")
 	bookedAt   DateTime @default(now())
@@ -49,11 +57,14 @@ model Booking {
 }
 
 model Indisponibilite {
-	id         Int      @id @default(autoincrement())
-	courtId    Int
-	court      Court    @relation(fields: [courtId], references: [id])
-	dateDebut  DateTime
-	raison     String?
+	id            Int      @id @default(autoincrement())
+	courtId       Int
+	court         Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
+	dateDebut     DateTime
+	raison        String?
+  createdUserId Int
+  createdUser   User     @relation(fields: [createdUserId], references: [id], onDelete: Cascade)
+  createdAt     DateTime @default(now())
 }
 
 model News {
@@ -81,15 +92,7 @@ model Tournament {
 	inscriptionsOuvertes Boolean  @default(true)
 }
 
-
-enum Role {
-	VISITER
-	ATTENTE_MEMBER
-	MEMBER
-	ADMIN
-}
-
-enum Poste {
+enum SectionRole {
 	DEVELOPPEUR
 	PRESIDENT
 	PRESIDENTE
@@ -99,7 +102,7 @@ enum Poste {
 	TRESORIERE
 	SECRETAIRE
 	COACH
-	JOUEUR
+	MEMBRE
 	VISITEUR
 }
 

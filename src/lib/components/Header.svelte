@@ -24,7 +24,7 @@
 				<a href="/" class:active={page.url.pathname === "/"}>École de tennis</a>
 				<a href="/" class:active={page.url.pathname === "/"}>Actualités</a>
 				<a href="/team" class:active={page.url.pathname === "/team"}>Equipe</a>
-				<a href="/" class:active={page.url.pathname === "/"}>Contact</a>
+				<a href="/contact" class:active={page.url.pathname === "/contact"}>Contact</a>
 			</div>
 			<div class="nav-actions">
 				<a href="/" class="btn-reserve">Réserver un court</a>

@@ -5,6 +5,7 @@
 
 	import Header from "#lib/components/Header.svelte";
 	import Toast from "#lib/components/Toast.svelte";
+	import Footer from "#lib/components/Footer.svelte";
 
 	let { data, children }: LayoutProps = $props();
 </script>
@@ -19,4 +20,5 @@
 	{@render children()}
 </main>
 
+<Footer />
 <Toast />

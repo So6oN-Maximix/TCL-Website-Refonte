@@ -1,0 +1,267 @@
+<svelte:head>
+    <title>Indisponibilités - TCL</title>
+</svelte:head>
+
+<section class="page-hero">
+	<svg class="court-lines" viewBox="0 0 1100 260" preserveAspectRatio="xMidYMid slice">
+		<rect x="750" y="10" width="320" height="240" fill="none" stroke="#F6F4EC" stroke-width="2"/>
+		<line x1="750" y1="130" x2="1070" y2="130" stroke="#F6F4EC" stroke-width="2"/>
+	</svg>
+	<div class="wrap">
+		<span class="eyebrow">Administration</span>
+		<h1>Disponibilités</h1>
+		<p>Bloquez des créneaux pour l'entretien, les cours collectifs ou les tournois — les membres ne pourront plus les réserver.</p>
+	</div>
+</section>
+
+<section id="admin-guard-message" hidden>
+	<div class="wrap">
+		<p class="auth-error" style="display:block;">Accès réservé aux administrateurs. Redirection…</p>
+	</div>
+</section>
+
+<section id="admin-content">
+	<div class="wrap booking">
+		<div class="booking-panel">
+			<h3>Court</h3>
+			<div class="court-option selected" data-court-id="1">
+				<div>
+					<div class="name">Court 1</div>
+					<div class="type">Extérieur</div>
+				</div>
+			</div>
+			<div class="court-option" data-court-id="2">
+				<div>
+					<div class="name">Court 2</div>
+					<div class="type">Couvert</div>
+				</div>
+			</div>
+		</div>
+
+		<div>
+			<h3 style="margin-bottom: 16px;">Date</h3>
+			<div class="week-nav">
+				<button type="button" class="week-nav-btn" id="prev-week-btn" aria-label="Semaine précédente">&larr;</button>
+				<span class="week-nav-label" id="week-nav-label">20 – 26 juillet 2026</span>
+				<button type="button" class="week-nav-btn" id="next-week-btn" aria-label="Semaine suivante">&rarr;</button>
+			</div>
+			<div class="date-picker">
+				<div class="date-pill selected" data-date="2026-07-20"><span class="d">Lun 20</span>juil.</div>
+				<div class="date-pill" data-date="2026-07-21"><span class="d">Mar 21</span>juil.</div>
+				<div class="date-pill" data-date="2026-07-22"><span class="d">Mer 22</span>juil.</div>
+				<div class="date-pill" data-date="2026-07-23"><span class="d">Jeu 23</span>juil.</div>
+				<div class="date-pill" data-date="2026-07-24"><span class="d">Ven 24</span>juil.</div>
+				<div class="date-pill" data-date="2026-07-25"><span class="d">Sam 25</span>juil.</div>
+				<div class="date-pill" data-date="2026-07-26"><span class="d">Dim 26</span>juil.</div>
+			</div>
+
+			<h3 style="margin: 28px 0 4px;" id="grid-title">Créneaux — Court 1, lundi 21 juillet</h3>
+
+			<div class="slot-legend">
+				<span class="legend-item"><span class="legend-swatch swatch-free"></span>Libre — cliquer pour bloquer</span>
+				<span class="legend-item"><span class="legend-swatch swatch-taken"></span>Réservé par un membre</span>
+				<span class="legend-item"><span class="legend-swatch swatch-unavailable"></span>Bloqué — cliquer pour débloquer</span>
+			</div>
+
+			<div class="slot-grid" id="admin-slot-grid">
+				<div class="slot slot-blockable" data-heure="9">9h – 10h</div>
+				<div class="slot slot-blockable" data-heure="10">10h – 11h</div>
+				<div class="slot slot-blockable" data-heure="11">11h – 12h</div>
+				<div class="slot slot-blockable" data-heure="12">12h – 13h</div>
+				<div class="slot slot-blockable" data-heure="14">14h – 15h</div>
+				<div class="slot slot-blockable" data-heure="15">15h – 16h</div>
+				<div class="slot slot-blockable" data-heure="16">16h – 17h</div>
+				<div class="slot slot-blockable" data-heure="17">17h – 18h</div>
+				<div class="slot slot-blockable" data-heure="18">18h – 19h</div>
+				<div class="slot slot-blockable" data-heure="19">19h – 20h</div>
+				<div class="slot slot-blockable" data-heure="20">20h – 21h</div>
+				<div class="slot slot-blockable" data-heure="21">21h – 22h</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- Modale de blocage d'un créneau -->
+<div class="modal-overlay" id="block-modal-overlay" hidden>
+	<div class="modal" role="dialog" aria-modal="true" aria-labelledby="block-modal-title">
+		<div class="modal-head">
+			<h3 id="block-modal-title">Bloquer un créneau</h3>
+			<button type="button" class="modal-close" id="block-modal-close" aria-label="Fermer">&times;</button>
+		</div>
+		<form id="block-form">
+			<p class="modal-slot-label"><span id="block-form-court-label">Court 2 · Intérieur</span> — <strong id="block-form-slot-label">10h – 11h</strong></p>
+			<div class="form-group">
+				<label for="block-raison">Raison du blocage</label>
+				<input type="text" name="raison" id="block-raison" placeholder="Ex: Entretien, cours collectif, tournoi…" required>
+			</div>
+			<div class="form-group form-group-submit">
+				<button type="submit" class="btn-primary">Bloquer ce créneau</button>
+				<button type="button" class="btn-outline btn-small" id="block-form-cancel">Annuler</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<!-- Modale de déblocage d'un créneau -->
+<div class="modal-overlay" id="unblock-modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="unblock-modal-title">
+        <div class="modal-head">
+            <h3 id="unblock-modal-title">Débloquer un créneau</h3>
+            <button type="button" class="modal-close" id="unblock-modal-close" aria-label="Fermer">&times;</button>
+        </div>
+        <form id="unblock-form">
+            
+            <!-- Encart d'informations structuré -->
+            <div style="background-color: rgba(0, 0, 0, 0.03); border-left: 4px solid var(--clay); padding: 16px; margin-bottom: 20px; border-radius: 4px;">
+                <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.8; color: #333;">
+                    <li><strong>Court :</strong> <span id="unblock-info-court">...</span></li>
+                    <li><strong>Date :</strong> <span id="unblock-info-date">...</span></li>
+                    <li><strong>Créneau :</strong> <span id="unblock-info-heure">...</span></li>
+                    <li><strong>Raison :</strong> <span id="unblock-info-raison">...</span></li>
+                </ul>
+            </div>
+
+            <div class="form-group">
+                <p style="margin: 0; color: #555; font-size: 0.95em;">
+                    Êtes-vous sûr de vouloir débloquer cette plage horaire ? Elle redeviendra immédiatement disponible pour les membres.
+                </p>
+				<p class="modal-status" hidden></p>
+            </div>
+            
+            <div class="form-group form-group-submit" style="margin-top: 24px;">
+                <button type="submit" class="btn-primary">Confirmer le déblocage</button>
+                <button type="button" class="btn-outline btn-small" id="unblock-form-cancel">Annuler</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modale d'ajout d'une indisponibilité récurrente -->
+<div class="modal-overlay" id="recurring-modal-overlay" hidden>
+	<div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="recurring-modal-title">
+		<div class="modal-head">
+			<h3 id="recurring-modal-title">Bloquer un créneau récurrent</h3>
+			<button type="button" class="modal-close" id="recurring-modal-close" aria-label="Fermer">&times;</button>
+		</div>
+
+		<form id="recurring-form">
+			<div class="form-group">
+				<label for="recurring-court">Court</label>
+				<select id="recurring-court" name="court" required>
+					<option value="1">Court 1 · Extérieur</option>
+					<option value="2">Court 2 · Couvert</option>
+				</select>
+			</div>
+
+			<div class="form-group">
+				<label for="recurring-raison">Raison</label>
+				<input type="text" id="recurring-raison" name="raison" placeholder="Ex: Cours collectif du mardi" required>
+			</div>
+
+			<div class="form-group-cols">
+				<div class="form-group">
+					<label for="recurring-heure-debut">Heure de début</label>
+					<select id="recurring-heure-debut" name="heureDebut" required>
+						<option value="9">9h00</option>
+						<option value="10">10h00</option>
+						<option value="11">11h00</option>
+						<option value="12">12h00</option>
+						<option value="14" selected>14h00</option>
+						<option value="15">15h00</option>
+						<option value="16">16h00</option>
+						<option value="17">17h00</option>
+						<option value="18">18h00</option>
+						<option value="19">19h00</option>
+						<option value="20">20h00</option>
+						<option value="21">21h00</option>
+					</select>
+				</div>
+				<div class="form-group">
+					<label for="recurring-heure-fin">Heure de fin</label>
+					<select id="recurring-heure-fin" name="heureFin" required>
+						<option value="10">10h00</option>
+						<option value="11">11h00</option>
+						<option value="12">12h00</option>
+						<option value="13">13h00</option>
+						<option value="15" selected>15h00</option>
+						<option value="16">16h00</option>
+						<option value="17">17h00</option>
+						<option value="18">18h00</option>
+						<option value="19">19h00</option>
+						<option value="20">20h00</option>
+						<option value="21">21h00</option>
+						<option value="22">22h00</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="form-group">
+				<label>Se répète chaque</label>
+				<div class="weekday-picker" id="weekday-picker">
+					<button type="button" class="weekday-pill" data-day="1">L</button>
+					<button type="button" class="weekday-pill" data-day="2">M</button>
+					<button type="button" class="weekday-pill" data-day="3">M</button>
+					<button type="button" class="weekday-pill" data-day="4">J</button>
+					<button type="button" class="weekday-pill" data-day="5">V</button>
+					<button type="button" class="weekday-pill" data-day="6">S</button>
+					<button type="button" class="weekday-pill" data-day="0">D</button>
+				</div>
+			</div>
+
+			<div class="form-group">
+				<label for="recurring-start-date">À partir du</label>
+				<input type="date" id="recurring-start-date" name="startDate" required>
+			</div>
+
+			<div class="form-group">
+				<label>Se termine</label>
+				<div class="recurrence-end-options">
+					<label class="radio-line">
+						<input type="radio" name="recurrenceEnd" value="on-date" checked>
+						Le
+						<input type="date" id="recurring-end-date" name="dateFin" class="inline-date">
+					</label>
+					<label class="radio-line">
+						<input type="radio" name="recurrenceEnd" value="after-count">
+						Dans
+						<input type="number" id="recurring-occurrences" name="occurrences" class="inline-number" min="1" max="52" value="1" disabled>
+						semaines
+					</label>
+				</div>
+			</div>
+
+			<p class="modal-note">Un créneau d'indisponibilité distinct sera créé pour chaque date correspondante. <br> Vous pourrez les débloquer individuellement depuis la liste ci-dessous.</p>
+			<p class="modal-status" id="recurring-status" hidden></p>
+
+			<div class="modal-actions">
+				<button type="submit" class="btn-primary">Créer les indisponibilités</button>
+				<button type="button" class="btn-outline btn-small" id="recurring-modal-cancel">Annuler</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<section class="section-tinted" id="upcoming-section">
+	<div class="wrap">
+		<div class="block-head" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+            <div>
+			    <h3 style="margin-bottom: 4px;">Indisponibilités à venir</h3>
+			    <span class="block-count">0 créneau bloqué</span>
+            </div>
+            <div class="dispo-actions-row">
+                <button type="button" class="btn-outline btn-small" id="open-recurring-modal">+ Bloquer un créneau récurrent</button>
+            </div>
+		</div>
+
+		<div class="admin-table-wrap">
+			<div class="dispo-table-head">
+				<span>Court</span>
+				<span>Date</span>
+				<span>Créneau</span>
+				<span>Raison</span>
+				<span>Actions</span>
+			</div>
+			<div id="dispo-list"></div>
+		</div>
+	</div>
+</section>
