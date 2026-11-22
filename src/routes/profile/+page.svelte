@@ -1,16 +1,13 @@
 <script lang="ts">
     import type { PageProps } from "./$types";
     import { ROLE_LABELS, NOT_MEMBER } from "#lib/constants.ts";
-    import { toasts } from "#lib/stores/toast.ts";
+    import { showToast } from "#lib/utils.ts";
 	import { enhance } from "$app/forms";
 
     let { data }: PageProps = $props();
 	console.log(data.user);
 
     let showModifyModal = $state(false);
-
-    type ToastType = "success" | "error" | "info";
-    function showToast(msg: string, type = "success") { toasts.send(msg, type as ToastType); }
 </script>
 
 <svelte:head>
@@ -219,7 +216,7 @@
 		</div>
 
 		<div class="admin-quick-links">
-			<a href="/" class="admin-quick-link">
+			<a href="/members" class="admin-quick-link">
 				<strong>Membres</strong>
 				<span>Rôles, cotisations, licences</span>
 			</a>

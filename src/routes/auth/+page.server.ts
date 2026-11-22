@@ -20,7 +20,7 @@ export const actions: Actions = {
 		const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
 		if (!firstName || !lastName || !email || !password || !confirmPassword) return fail(400, { error: "Champs invalides" });
-        if (password !== confirmPassword) return fail(400, { error: "Les mots de passe doivent être identiques"})
+        if (password !== confirmPassword) return fail(400, { error: "Les mots de passe doivent être identiques"});
 		if (!/^\S+@\S+\.\S+$/.test(email)) return fail(400, { error: "Adresse e-mail invalide" });
 		if (password.length < 8) return fail(400, { error: "Le mot de passe doit faire au moins 8 caractères" });
 		if (Buffer.byteLength(password) > 72) return fail(400, { error: "Le mot de passe est trop long (72 caractères max)" });

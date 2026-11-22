@@ -13,7 +13,7 @@ const POSTE_RANK: Record<string, number> = {
 export const load: PageServerLoad = async ({}) => {
     try {
         const admins = await prisma.user.findMany({
-            where: { section: { } },
+            where: { role: { notIn: ["VISITEUR", "MEMBRE"] } },
             select: { firstName: true, lastName: true, email: true, role: true }
         });
 

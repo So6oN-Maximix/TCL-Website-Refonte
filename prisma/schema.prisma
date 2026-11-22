@@ -62,9 +62,9 @@ model Indisponibilite {
 	court         Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
 	dateDebut     DateTime
 	raison        String?
-  createdUserId Int
-  createdUser   User     @relation(fields: [createdUserId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now())
+  	createdUserId Int
+ 	createdUser   User     @relation(fields: [createdUserId], references: [id], onDelete: Cascade)
+  	createdAt     DateTime @default(now())
 }
 
 model News {

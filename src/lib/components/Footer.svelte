@@ -9,7 +9,7 @@
 		<div>
 			<h4>Le club</h4>
 			<ul>
-				<li><a href="/">École de tennis</a></li>
+				<li><a href="/school">École de tennis</a></li>
 				<li><a href="/team">Nos équipes</a></li>
 			</ul>
 		</div>
