@@ -21,8 +21,8 @@
 		<div class="nav-collapsible">
 			<div class="nav-links">
 				<a href="/" class:active={page.url.pathname === "/"}>Accueil</a>
-				<a href="/" class:active={page.url.pathname === "/"}>École de tennis</a>
-				<a href="/" class:active={page.url.pathname === "/"}>Actualités</a>
+				<a href="/school" class:active={page.url.pathname === "/school"}>École de tennis</a>
+				<a href="/news" class:active={page.url.pathname === "/news"}>Actualités</a>
 				<a href="/team" class:active={page.url.pathname === "/team"}>Equipe</a>
 				<a href="/contact" class:active={page.url.pathname === "/contact"}>Contact</a>
 			</div>

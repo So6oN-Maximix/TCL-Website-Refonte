@@ -28,7 +28,11 @@
 			<h1>Mon profil</h1>
 			<p>Vos informations, votre licence et l'historique de vos réservations.</p>
 		</div>
-		<button type="button" class="btn-logout" id="logout-btn">Se déconnecter</button>
+		<form method="POST" action="/logout" use:enhance>
+			<button type="submit" class="btn-logout">
+				Se déconnecter
+			</button>
+		</form>
 	</div>
 </section>
 
@@ -65,7 +69,7 @@
 				<div class="label">Arrivée au club</div>
 			</div>
 			<div class="profile-stat profile-stat-status">
-				<div class="num">À jour</div>
+				<div class="num">{data.user.cotisationPayed ? "À jour" : "En attente"}</div>
 				<div class="label">Cotisation 2025–2026</div>
 			</div>
 		</div>
