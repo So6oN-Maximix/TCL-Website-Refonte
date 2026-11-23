@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { PageProps } from "./$types";
-    import { ROLE_LABELS, NOT_MEMBER } from "#lib/constants.ts";
+    import { ROLE_LABELS, NOT_ADMIN } from "#lib/constants.ts";
     import { showToast } from "#lib/utils.ts";
 	import { enhance } from "$app/forms";
 
@@ -42,16 +42,16 @@
 					<span class="profile-name">{data.user.firstName} {data.user.lastName.toUpperCase()}</span>
 					<span class="role-badge">{ROLE_LABELS[data.user.role]}</span>
 				</div>
-                {#if !NOT_MEMBER.includes(data.user.role)}
+                {#if data.user.role !== "VISITEUR"}
 				<div class="profile-meta">Licencié depuis {data.user.memberSince?.getFullYear()} · Membre actif</div>
                 {/if}
 			</div>
-            {#if !NOT_MEMBER.includes(data.user.role)}
+            {#if data.user.role !== "VISITEUR"}
 			<a href="/reservation" class="btn-primary profile-cta">Réserver un créneau</a>
             {/if}
 		</div>
 
-        {#if !NOT_MEMBER.includes(data.user.role)}
+        {#if data.user.role !== "VISITEUR"}
 		<div class="profile-stats">
 			<div class="profile-stat">
 				<div class="num">XXX</div>
@@ -95,7 +95,7 @@
 					<div class="info-row"><span class="k">Nom</span><span class="v">{data.user.lastName.toUpperCase()}</span></div>
 					<div class="info-row"><span class="k">E-mail</span><span class="v">{data.user.email}</span></div>
 					<div class="info-row"><span class="k">Téléphone</span><span class="v" class:empty={!data.user.phone}>{data.user.phone ?? "Pas de téléphone"}</span></div>
-                    {#if !NOT_MEMBER.includes(data.user.role)}
+                    {#if data.user.role !== "VISITEUR"}
 					<div class="info-row"><span class="k">N° de licence FFT</span><span class="v" class:empty={!data.user.licence}>{data.user.licence ?? "Pas de numéro de licence"}</span></div>
 					<div class="info-row"><span class="k">Cotisation 2025-2026</span><span class="v">{data.user.cotisationPayed ? "A jour" : "En attente"}</span></div>
                     {:else}
@@ -104,7 +104,7 @@
 				</div>
 			</div>
 
-            {#if !NOT_MEMBER.includes(data.user.role)}
+            {#if data.user.role !== "VISITEUR"}
 			<div>
 				<div class="block-head">
 					<h3>Mes réservations</h3>
@@ -207,7 +207,7 @@
 	</div>
 </section>
 
-{#if ROLE_LABELS[data.user.role] === "Administrateur"}
+{#if !NOT_ADMIN.includes(data.user.role)}
 <section class="section-tinted">
 	<div class="wrap">
 		<div class="block-head">

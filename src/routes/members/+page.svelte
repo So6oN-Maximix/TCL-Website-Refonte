@@ -1,13 +1,25 @@
 <script lang="ts">
 	import { enhance } from "$app/forms";
     import type { PageProps } from "./$types";
-    import { showToast } from "#lib/utils.ts";
+    import { showToast, formatPhoneUX } from "#lib/utils.ts";
+    import { NOT_ADMIN } from "#lib/constants.ts";
 
     let { data, form }: PageProps = $props();
+    console.log(data.users);
 
     let showAddUserForm = $state(false);
+	let showDeleteConfirm = $state(false)
     let newRoleValue = $state("MEMBRE");
+    let editRoleValue = $state("MEMBRE");
     let newSexValue = $state(true);
+
+	type Member = NonNullable<typeof data.users>[number];
+	let selectedUser = $state<Member | null>(null);
+
+	function openEditModal(user: Member) {
+		selectedUser = { ...user };
+		editRoleValue = ["MEMBRE", "VISITEUR"].includes(user.role) ? user.role : "ADMIN";
+	}
 </script>
 
 <svelte:head>
@@ -123,117 +135,107 @@
 		</form>
         {/if}
 
-		<div class="members-directory" id="members-list">
-            
-            <!-- Exemple Brut 1 : Admin (Président) -->
-            <div class="member-list-item">
+		<div class="members-directory">
+            {#each data.users as user}
+			{@const formattedRole = NOT_ADMIN.includes(user.role) ? user.role : "Admin"}
+            <div class="member-list-item" role="button" tabindex="0" onclick={() => openEditModal(user)} onkeydown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					openEditModal(user);
+				}
+			}}>
                 <div class="member-info">
-                    <strong class="member-name">Alice Dupont</strong>
-                    <span class="member-email">alice.dupont@email.com</span>
+                    <strong class="member-name">{user.lastName.toUpperCase()} {user.firstName}</strong>
+                    <span class="member-email">{user.email}</span>
                 </div>
                 <div class="member-badges">
-                    <span class="role-badge role-badge-admin">Admin</span>
-                    <span class="role-badge role-badge-admin" style="background: transparent; border: 1px solid var(--clay); color: var(--clay);">Président</span>
-                </div>
-                <span class="member-action-link">Modifier &rarr;</span>
-            </div>
-
-            <!-- Exemple Brut 2 : Admin (Coach) avec équipe -->
-            <div class="member-list-item">
-                <div class="member-info">
-                    <strong class="member-name">Thomas Bernard</strong>
-                    <span class="member-email">thomas.b@email.com</span>
-                </div>
-                <div class="member-badges">
-                    <span class="role-badge role-badge-admin">Admin</span>
-                    <span class="role-badge role-badge-admin" style="background: transparent; border: 1px solid var(--clay); color: var(--clay);">Coach</span>
+                    <span class={`role-badge role-badge-${formattedRole.toLowerCase()}`}>{formattedRole}</span>
+                    {#if !NOT_ADMIN.includes(user.role)}
+                    <span class="role-badge role-badge-admin" style="background: transparent; border: 1px solid var(--clay); color: var(--clay);">{user.role}</span>
+                    {/if}
+					{#if !user.cotisationPayed}
+                    <span class="role-badge" style="background: #FBEFE6; color: var(--clay);">Cotisation impayée</span>
+					{/if}
                     <span class="role-badge role-badge-membre" style="background: transparent; border: 1px solid var(--court-green); color: var(--court-green);">Équipe 1 (H)</span>
                 </div>
-                <span class="member-action-link">Modifier &rarr;</span>
+				<span class="member-action-link">Modifier &rarr;</span>
             </div>
-
-            <!-- Exemple Brut 3 : Licencié classique (Non à jour de cotisation) -->
-            <div class="member-list-item">
-                <div class="member-info">
-                    <strong class="member-name">Marc Leroy</strong>
-                    <span class="member-email">marc.leroy@email.com</span>
-                </div>
-                <div class="member-badges">
-                    <span class="role-badge role-badge-membre">Licencié</span>
-                    <!-- Badge optionnel pour alerter sur la cotisation -->
-                    <span class="role-badge" style="background: #FBEFE6; color: var(--clay);">Cotisation impayée</span>
-                </div>
-                <span class="member-action-link">Modifier &rarr;</span>
-            </div>
-
-            <!-- Exemple Brut 4 : Visiteur -->
-            <div class="member-list-item">
-                <div class="member-info">
-                    <strong class="member-name">Sophie Martin</strong>
-                    <span class="member-email">sophie.m@email.com</span>
-                </div>
-                <div class="member-badges">
-                    <span class="role-badge role-badge-visiteur">Visiteur</span>
-                </div>
-                <span class="member-action-link">Modifier &rarr;</span>
-            </div>
-
+            {/each}
         </div>
 	</div>
 </section>
 
-<!-- MODALE D'ÉDITION (Totalement invisible par défaut) -->
-<div class="modal-overlay" id="edit-member-modal" hidden>
+{#if selectedUser}
+<div class="modal-overlay">
 	<div class="modal">
 		<div class="modal-head">
 			<h3 id="edit-modal-name">Modifier le profil</h3>
-			<button type="button" class="modal-close" id="close-edit-modal">&times;</button>
+			<button type="button" class="modal-close" onclick={() => selectedUser = null}>&times;</button>
 		</div>
 		
-		<form id="edit-member-form">
-			<!-- Ligne 1 : Identité -->
+		<form method="POST" action="?/saveUser" use:enhance={() => {
+			return async ({ result, update }) => {
+				if (result.type === "success") {
+					selectedUser = null;
+					showToast("Informations enregistrées");
+				}
+                else if (result.type === "failure") {
+                    const data = result.data as { error?: string } | undefined;
+                    const errorMessage = data?.error || "Erreur server";
+                    showToast(errorMessage, "error");
+                }
+				update();
+			}
+		}}>
+			<input name="userId" hidden value={selectedUser.id}>
 			<div class="form-group-cols">
 				<div class="form-group">
-					<label for="edit-prenom">Prénom</label>
-					<input type="text" id="edit-prenom" required>
+					<label for="editFirstName">Prénom</label>
+					<input type="text" id="editFirstName" name="firstName" value={selectedUser.firstName} required>
 				</div>
 				<div class="form-group">
-					<label for="edit-nom">Nom</label>
-					<input type="text" id="edit-nom" required>
+					<label for="editLastName">Nom</label>
+					<input type="text" id="editLastName" name="lastName" value={selectedUser.lastName} required>
 				</div>
 			</div>
+			
+			<div class="form-group">
+				<label for="editEmail">Email</label>
+				<input type="text" id="editEmail" name="email" value={selectedUser.email}>
+			</div>
 
-			<!-- Ligne 2 : Rôle et Précision -->
 			<div class="form-group-cols">
 				<div class="form-group">
-					<label for="edit-role">Rôle</label>
-					<select id="edit-role" class="role-select">
-						<option value="VISITER">Visiteur</option>
-						<option value="MEMBER">Licencié</option>
-						<option value="ADMIN">Administrateur</option>
+					<label for="editRole">Rôle</label>
+					<select id="editRole" class="role-select" name="role" bind:value={editRoleValue}>
+						<option value="VISITEUR">Visiteu{!selectedUser.sexe ? "se" : "r"}</option>
+						<option value="MEMBRE">Licencié{!selectedUser.sexe ? "e" : ""}</option>
+						<option value="ADMIN">Administrat{!selectedUser.sexe ? "rice" : "eur"}</option>
 					</select>
 				</div>
-				<!-- Précision (masquée si non-admin) -->
+				{#if editRoleValue === "ADMIN"}
 				<div class="form-group">
-					<label for="edit-precision" style="color: transparent;">Titre</label>
-					<select id="edit-precision" class="role-precision" style="display: none;">
-						<option value="PRESIDENT">Président</option>
+					<label for="editPrecision" style="color: transparent;">Titre</label>
+					<select id="editPrecision" class="role-precision" name="roleDesc" value={selectedUser.role}>
+						<option value="DEVELOPPEUR">Développeur</option>
+						<option value={`PRESIDENT${!selectedUser.sexe ? "e" : ""}`}>Président{!selectedUser.sexe ? "e" : ""}</option>
+						<option value={`VICE-PRESIDENT${!selectedUser.sexe ? "e" : ""}`}>Vice-Président{!selectedUser.sexe ? "e" : ""}</option>
+						<option value={`TRESORIER${!selectedUser.sexe ? "e" : ""}`}>Trésorier{!selectedUser.sexe ? "e" : ""}</option>
 						<option value="SECRETAIRE">Secrétaire</option>
-						<option value="TRESORIER">Trésorier</option>
 						<option value="COACH">Coach</option>
 					</select>
 				</div>
+				{/if}
 			</div>
 
-			<!-- Ligne 3 : Contact et Équipe -->
 			<div class="form-group-cols">
 				<div class="form-group">
-					<label for="edit-telephone">Numéro de tél.</label>
-					<input type="tel" id="edit-telephone" placeholder="06 00 00 00 00">
+					<label for="editPhone">Numéro de tél.</label>
+					<input type="tel" id="editPhone" name="phone" placeholder="06 00 00 00 00" value={formatPhoneUX(selectedUser.phone)}>
 				</div>
 				<div class="form-group">
-					<label for="edit-equipe">Équipe</label>
-					<select id="edit-equipe">
+					<label for="editTeam">Équipe</label>
+					<select id="editTeam" name="team">
 						<option value="">Aucune</option>
 						<option value="1">Équipe 1 (F)</option>
 						<option value="2">Équipe 1 (H)</option>
@@ -241,30 +243,87 @@
 				</div>
 			</div>
 
-			<!-- Ligne 4 : Licence FFT -->
 			<div class="form-group">
-				<label for="edit-licence">N° de licence FFT</label>
-				<input type="text" id="edit-licence">
+				<label for="editLicence">N° de licence FFT</label>
+				<input type="text" id="editLicence" name="licence" value={selectedUser.licence}>
 			</div>
 
-			<!-- Ligne 5 : Statut cotisation -->
 			<div class="form-group">
 				<div class="checkbox-field" style="display: flex; align-items: center; gap: 8px;">
-					<input type="checkbox" id="edit-cotisation" style="width: 16px; height: 16px; accent-color: var(--clay);">
-					<label for="edit-cotisation" style="margin: 0; font-size: 14px;">Cotisation à jour</label>
+					<input type="checkbox" id="editCotisation" name="cotisation" checked={selectedUser.cotisationPayed} style="width: 16px; height: 16px; accent-color: var(--clay);">
+					<label for="editCotisation" style="margin: 0; font-size: 14px;">Cotisation à jour</label>
 				</div>
 			</div>
 
-			<!-- Actions -->
 			<div class="modal-actions modal-actions-split" style="margin-top: 24px;">
 				<div class="modal-actions-main">
 					<button type="submit" class="btn-primary">Enregistrer</button>
 				</div>
-				<button type="button" class="btn-danger-link" id="delete-member-btn">Supprimer le compte</button>
+				<button type="button" class="btn-danger-link" onclick={() => showDeleteConfirm = true}>Supprimer le compte</button>
 			</div>
 		</form>
 	</div>
 </div>
+
+	{#if showDeleteConfirm}
+	<div
+		class="modal-overlay modal-overlay-confirm"
+		role="button"
+		tabindex="-1"
+		onclick={event => { if (event.target === event.currentTarget) showDeleteConfirm = false; }}
+		onkeydown={event => { if (event.key === "Escape") showDeleteConfirm = false; }}
+	>
+		<div class="modal modal-confirm">
+			<div class="modal-head">
+				<h3>Confirmer la suppression</h3>
+				<button type="button" class="modal-close" onclick={() => (showDeleteConfirm = false)}>
+					&times;
+				</button>
+			</div>
+
+			<p class="confirm-text">
+				Êtes-vous sûr de vouloir supprimer définitivement le compte de
+				<strong>{selectedUser.firstName} {selectedUser.lastName.toUpperCase()}</strong> ?
+			</p>
+			<p class="confirm-warning">
+				Cette action est irréversible et supprimera également ses réservations associées.
+			</p>
+
+			<form method="POST" action="?/deleteUser" use:enhance={() => {
+				return async ({ result, update }) => {
+					if (result.type === "success") {
+						showDeleteConfirm = false;
+						selectedUser = null;
+						showToast("Compte supprimé");
+					} else if (result.type === "failure") {
+						const data = result.data as { error?: string } | undefined;
+						const errorMessage = data?.error || "Erreur server";
+						showToast(errorMessage, "error");
+					}
+					update();
+				};
+			}}>
+				<input type="hidden" name="userId" value={selectedUser.id} />
+
+				<div class="confirm-actions">
+					<button
+						type="button"
+						class="btn-outline"
+						onclick={() => (showDeleteConfirm = false)}
+					>
+						Annuler
+					</button>
+					<button type="submit" class="btn-danger-solid">
+						Oui, supprimer définitivement
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+	{/if}
+{/if}
+
+
 
 <style>
     .members-directory {
@@ -304,6 +363,96 @@
     .member-list-item:hover .member-action-link, 
     .member-list-item:focus .member-action-link { opacity: 1; }
 
+	.btn-danger-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 6px;
+		padding: 10px 18px;
+		border-radius: 999px;
+		border: 1.5px solid #b83227;
+		background-color: #fdf2f1;
+		color: #b83227;
+		font-family: inherit;
+		font-size: 13.5px;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		text-decoration: none;
+		cursor: pointer;
+		transition: background-color 0.18s ease, color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+	}
+
+	.btn-danger-link:hover {
+		background-color: #b83227;
+		color: #ffffff;
+		box-shadow: 0 6px 16px -4px rgba(184, 50, 39, 0.35);
+	}
+
+	.btn-danger-link:active {
+		transform: translateY(1px);
+	}
+
+	/* Modale de confirmation au premier plan */
+	.modal-overlay-confirm {
+		z-index: 1100;
+		background: rgba(26, 36, 30, 0.72);
+	}
+
+	.modal-confirm {
+		max-width: 440px;
+	}
+
+	.confirm-text {
+		font-size: 15px;
+		line-height: 1.5;
+		color: var(--ink, #1A241E);
+		margin: 8px 0 10px;
+	}
+
+	.confirm-warning {
+		font-size: 13px;
+		line-height: 1.45;
+		color: #b83227;
+		background: #fdf2f1;
+		border-left: 3px solid #b83227;
+		padding: 10px 12px;
+		border-radius: 6px;
+		margin-bottom: 22px;
+	}
+
+	.confirm-actions {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.btn-danger-solid {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 10px 18px;
+		border-radius: 999px;
+		border: 1.5px solid #b83227;
+		background-color: #b83227;
+		color: #ffffff;
+		font-family: inherit;
+		font-size: 13.5px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+	}
+
+	.btn-danger-solid:hover {
+		background-color: #96251c;
+		border-color: #96251c;
+		box-shadow: 0 6px 16px -4px rgba(184, 50, 39, 0.4);
+	}
+
+	.btn-danger-solid:active {
+		transform: translateY(1px);
+	}
+
     /* Responsive Mobile (max-width: 480px) */
     @media (max-width: 480px) {
         .member-list-item { 
@@ -312,5 +461,10 @@
             padding: 18px 16px;
         }
         .member-action-link { opacity: 1; display: inline-block; margin-top: 4px; }
+		
+		.confirm-actions {
+			flex-direction: column-reverse;
+			align-items: stretch;
+		}
     }
 </style>

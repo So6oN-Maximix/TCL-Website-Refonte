@@ -14,4 +14,4 @@ export const ROLE_LABELS: Record<SectionRole, string> = {
 	VISITEUR: "Visiteur"
 };
 
-export const NOT_MEMBER = ["VISITEUR"];
+export const NOT_ADMIN = ["VISITEUR", "MEMBRE"];
