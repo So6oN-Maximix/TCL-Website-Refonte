@@ -5,7 +5,6 @@
     import { NOT_ADMIN } from "#lib/constants.ts";
 
     let { data, form }: PageProps = $props();
-    console.log(data.users);
 
     let showAddUserForm = $state(false);
 	let showDeleteConfirm = $state(false)
@@ -20,6 +19,20 @@
 		selectedUser = { ...user };
 		editRoleValue = ["MEMBRE", "VISITEUR"].includes(user.role) ? user.role : "ADMIN";
 	}
+
+	let search = $state("");
+
+	const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+	let filteredUsers = $derived.by(() => {
+		const terms = normalize(search).split(/\s+/).filter(Boolean);
+		if (terms.length === 0) return data.users;
+
+		return data.users.filter(user => {
+			const haystack = normalize(`${user.firstName} ${user.lastName} ${user.email} ${user.role}`);
+			return terms.every(term => haystack.includes(term));
+		});
+	});
 </script>
 
 <svelte:head>
@@ -49,7 +62,7 @@
 		<div class="filter-group" style="align-items: flex-end;">
 			<div style="flex: 1; max-width: 420px;">
 				<label for="search-input" class="reservations-label" style="margin-top: 0; display: block;">Rechercher</label>
-				<input type="text" id="search-input" placeholder="Nom, e-mail..." class="search-input" style="margin-bottom: 0; max-width: 100%;">
+				<input type="text" id="search-input" bind:value={search} placeholder="Nom, e-mail..." class="search-input" style="margin-bottom: 0; max-width: 100%;">
 			</div>
 			<button type="button" class="btn-primary" onclick={() => showAddUserForm = !showAddUserForm}>+ Ajouter un membre</button>
 		</div>
@@ -136,7 +149,7 @@
         {/if}
 
 		<div class="members-directory">
-            {#each data.users as user}
+            {#each filteredUsers as user (user.id)}
 			{@const formattedRole = NOT_ADMIN.includes(user.role) ? user.role : "Admin"}
             <div class="member-list-item" role="button" tabindex="0" onclick={() => openEditModal(user)} onkeydown={event => {
 				if (event.key === "Enter" || event.key === " ") {
@@ -162,7 +175,11 @@
                 </div>
 				<span class="member-action-link">Modifier &rarr;</span>
             </div>
-            {/each}
+            {:else}
+				<p style="padding: 24px 20px; color: var(--ink-soft); text-align: center;">
+					Aucun membre ne correspond à la recherche.
+				</p>
+			{/each}
         </div>
 	</div>
 </section>
