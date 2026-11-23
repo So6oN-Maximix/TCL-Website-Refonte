@@ -117,5 +117,17 @@ export const actions: Actions = {
 
             return { success: true };
         } catch (error) { throw error }
+    },
+    deleteTeam: async ({ request, locals }) => {
+        if (!locals.user || NOT_ADMIN.includes(locals.user.role)) return fail(403, "Non autorisé");
+
+        const formData = await request.formData();
+        const teamId = Number(formData.get("teamId") ?? 0);
+        if (teamId === 0) return fail(400, { error: "Identifiant équipe introuvable"});
+
+        try {
+            await prisma.team.delete({ where: { id: teamId } });
+            return { success: true };
+        } catch (error) { throw error }
     }
 };

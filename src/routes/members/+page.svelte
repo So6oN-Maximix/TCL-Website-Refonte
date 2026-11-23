@@ -28,7 +28,7 @@
 		const terms = normalize(search).split(/\s+/).filter(Boolean);
 		if (terms.length === 0) return data.users;
 
-		return data.users.filter(user => {
+		return data.users!.filter(user => {
 			const haystack = normalize(`${user.firstName} ${user.lastName} ${user.email} ${user.role}`);
 			return terms.every(term => haystack.includes(term));
 		});

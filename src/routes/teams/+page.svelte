@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { showToast } from "#lib/utils.ts";
 	import { enhance } from "$app/forms";
+	import { hydratable } from "svelte";
     import type { PageProps } from "./$types";
     let { data }: PageProps = $props();
 
@@ -399,7 +400,21 @@
 				Cette action est irréversible : l'équipe sera retirée du championnat et la composition perdue.
 			</p>
 
-			<form onsubmit={event => { event.preventDefault(); showDeleteConfirm = false; selectedTeam = null; }}>
+			<form method="POST" action="?/deleteTeam" use:enhance={() => {
+				return async ({ result, update }) => {
+					if (result.type === "success") {
+						showDeleteConfirm = false;
+						selectedTeam = null;
+						showToast("Equipe supprimée");
+					} else if (result.type === "failure") {
+						const data = result.data as { error?: string } | undefined;
+						const errorMessage = data?.error || "Erreur server";
+						showToast(errorMessage, "error");
+					}
+					update();
+				}
+			}}>
+				<input type="hidden" name="teamId" value={selectedTeam.id} />
 				<div class="confirm-actions">
 					<button type="button" class="btn-outline" onclick={() => (showDeleteConfirm = false)}>
 						Annuler
