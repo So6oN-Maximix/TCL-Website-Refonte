@@ -138,9 +138,9 @@
 		<div class="members-directory">
             {#each data.users as user}
 			{@const formattedRole = NOT_ADMIN.includes(user.role) ? user.role : "Admin"}
-            <div class="member-list-item" role="button" tabindex="0" onclick={() => openEditModal(user)} onkeydown={(e) => {
-				if (e.key === "Enter" || e.key === " ") {
-					e.preventDefault();
+            <div class="member-list-item" role="button" tabindex="0" onclick={() => openEditModal(user)} onkeydown={event => {
+				if (event.key === "Enter" || event.key === " ") {
+					event.preventDefault();
 					openEditModal(user);
 				}
 			}}>
@@ -156,7 +156,9 @@
 					{#if !user.cotisationPayed}
                     <span class="role-badge" style="background: #FBEFE6; color: var(--clay);">Cotisation impayée</span>
 					{/if}
-                    <span class="role-badge role-badge-membre" style="background: transparent; border: 1px solid var(--court-green); color: var(--court-green);">Équipe 1 (H)</span>
+					{#if user.teamId}
+                    <span class="role-badge role-badge-membre" style="background: transparent; border: 1px solid var(--court-green); color: var(--court-green);">{user.team?.name} ({user.team?.category[0]})</span>
+					{/if}
                 </div>
 				<span class="member-action-link">Modifier &rarr;</span>
             </div>
