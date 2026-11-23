@@ -220,7 +220,7 @@
 				<strong>Membres</strong>
 				<span>Rôles, cotisations, licences</span>
 			</a>
-			<a href="/" class="admin-quick-link">
+			<a href="/teams" class="admin-quick-link">
 				<strong>Équipes</strong>
 				<span>Composition, résultats</span>
 			</a>

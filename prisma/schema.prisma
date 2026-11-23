@@ -18,8 +18,9 @@ model User {
 	phone			 String?
 	bookings  		 Booking[]
 	cotisationPayed  Boolean   		   @default(false)
-	teamId    		 Int?
-	team      		 Team?     		   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+	teamId           Int?
+	team             Team?             @relation("TeamMembers", fields: [teamId], references: [id], onDelete: SetNull)
+	captainedTeams   Team[]            @relation("TeamCaptain")
     indisponibilites Indisponibilite[]
 	role			 SectionRole 	   @default(VISITEUR)
     section          Section?          @relation(fields: [sectionId], references: [id], onDelete: Cascade)
@@ -77,11 +78,16 @@ model News {
 }
 
 model Team {
-	id        Int     @id @default(autoincrement())
-	nom       String  @unique
-	categorie String
-	resultats String?
-	members   User[]
+	id        Int      @id @default(autoincrement())
+	name      String   @unique
+	captainId Int?
+	captain   User?    @relation("TeamCaptain", fields: [captainId], references: [id], onDelete: SetNull)
+	category  String
+	division  String
+	results   String?
+	matchDay  String
+	isEngaged Boolean @default(false)
+	members   User[]  @relation("TeamMembers")
 }
 
 model Tournament {

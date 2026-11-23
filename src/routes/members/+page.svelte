@@ -51,7 +51,7 @@
 				<label for="search-input" class="reservations-label" style="margin-top: 0; display: block;">Rechercher</label>
 				<input type="text" id="search-input" placeholder="Nom, e-mail..." class="search-input" style="margin-bottom: 0; max-width: 100%;">
 			</div>
-			<button type="button" class="btn-primary" onclick={() => showAddUserForm = true}>+ Ajouter un membre</button>
+			<button type="button" class="btn-primary" onclick={() => showAddUserForm = !showAddUserForm}>+ Ajouter un membre</button>
 		</div>
 
         {#if showAddUserForm}

@@ -9,6 +9,9 @@
 	--ink-soft: #3C4A41;
 	--ball: #C7B824;
 }
+
+:global(body:has(.modal-overlay)) { overflow: hidden; }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 [hidden] { display: none !important; }
 body {
