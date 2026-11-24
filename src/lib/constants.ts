@@ -15,3 +15,5 @@ export const ROLE_LABELS: Record<SectionRole, string> = {
 };
 
 export const NOT_ADMIN = ["VISITEUR", "MEMBRE"];
+export const START_HOURS = 8;
+export const END_HOURS = 20;

@@ -1,3 +1,92 @@
+<script lang="ts">
+	import type { PageProps } from "./$types";
+	import { START_HOURS, END_HOURS } from "#lib/constants.ts";
+	import { enhance } from "$app/forms";
+	import { showToast } from "#lib/utils.ts";
+
+	let { data }: PageProps = $props();
+	console.log(data.indisponibilites);
+
+	function getMonday(fromDate: Date = new Date()): Date {
+		const date = new Date(fromDate);
+		const day = date.getDay();
+		const diff = day === 0 ? -6 : 1 - day;
+		date.setDate(date.getDate() + diff);
+		date.setHours(0, 0, 0, 0);
+		return date;
+	}
+	
+	let currentMonday = $state(getMonday());
+	let selectedDate = $state(new Date(new Date().setHours(0, 0, 0, 0)));
+	let weekDays = $derived(
+		Array.from({ length: 7 }, (_, i) => {
+			const date = new Date(currentMonday);
+			date.setDate(currentMonday.getDate() + i);
+
+			const weekday = date.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
+			const dayNum = date.getDate();
+			const month = date.toLocaleDateString("fr-FR", { month: "short" }).replace(".", "");
+
+			return {
+				date,
+				iso: date.toISOString().slice(0, 10),
+				topLabel: `${weekday.charAt(0).toUpperCase() + weekday.slice(1)} ${dayNum}`,
+				monthLabel: `${month}.`
+			};
+		})
+	);
+	let weekRangeLabel = $derived.by(() => {
+		const first = weekDays[0].date;
+		const last = weekDays[6].date;
+		const sameMonth = first.getMonth() === last.getMonth();
+
+		if (sameMonth) {
+			const monthYear = last.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+			return `${first.getDate()} – ${last.getDate()} ${monthYear}`;
+		}
+		const startStr = first.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+		const endStr = last.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+		return `${startStr} – ${endStr}`;
+	});
+
+	function changeWeek(offsetWeek: number) {
+		const next = new Date(currentMonday);
+		next.setDate(next.getDate() + offsetWeek * 7);
+		currentMonday = next;
+
+		const nextSelected = new Date(selectedDate);
+		nextSelected.setDate(nextSelected.getDate() + offsetWeek * 7);
+		selectedDate = nextSelected;
+	}
+
+	const isSameDay = (a: Date, b: Date) =>
+		a.getFullYear() === b.getFullYear() &&
+		a.getMonth() === b.getMonth() &&
+		a.getDate() === b.getDate();
+
+	let selectedHour = $state<number>(0);
+	let showBlockModal = $state(false);
+
+	type Indisponibilite = NonNullable<typeof data.indisponibilites>[number];
+	let blockedMap = $derived.by(() => {
+		const map = new Map<string, Indisponibilite>();
+
+		for (const item of data.indisponibilites ?? []) {
+			const d = new Date(item.dateDebut);
+			const dateKey = d.toLocaleDateString("en-CA");
+			const hour = d.getHours();
+			map.set(`${item.courtId}-${dateKey}-${hour}`, item);
+		}
+
+		return map;
+	});
+
+	function getBlockedSlot(hour: number) {
+		const dateKey = selectedDate.toLocaleDateString("en-CA");
+		return blockedMap.get(`1-${dateKey}-${hour}`) ?? null;
+	}
+</script>
+
 <svelte:head>
     <title>Indisponibilités - TCL</title>
 </svelte:head>
@@ -24,16 +113,10 @@
 	<div class="wrap booking">
 		<div class="booking-panel">
 			<h3>Court</h3>
-			<div class="court-option selected" data-court-id="1">
+			<div class="court-option selected">
 				<div>
-					<div class="name">Court 1</div>
-					<div class="type">Extérieur</div>
-				</div>
-			</div>
-			<div class="court-option" data-court-id="2">
-				<div>
-					<div class="name">Court 2</div>
-					<div class="type">Couvert</div>
+					<div class="name">Salle de la Forge</div>
+					<div class="type">Intérieur</div>
 				</div>
 			</div>
 		</div>
@@ -41,21 +124,20 @@
 		<div>
 			<h3 style="margin-bottom: 16px;">Date</h3>
 			<div class="week-nav">
-				<button type="button" class="week-nav-btn" id="prev-week-btn" aria-label="Semaine précédente">&larr;</button>
-				<span class="week-nav-label" id="week-nav-label">20 – 26 juillet 2026</span>
-				<button type="button" class="week-nav-btn" id="next-week-btn" aria-label="Semaine suivante">&rarr;</button>
+				<button type="button" class="week-nav-btn" aria-label="Semaine précédente" onclick={() => changeWeek(-1)} disabled={currentMonday <= new Date()}>&larr;</button>
+				<span class="week-nav-label" id="week-nav-label">{weekRangeLabel}</span>
+				<button type="button" class="week-nav-btn" aria-label="Semaine suivante" onclick={() => changeWeek(1)}>&rarr;</button>
 			</div>
 			<div class="date-picker">
-				<div class="date-pill selected" data-date="2026-07-20"><span class="d">Lun 20</span>juil.</div>
-				<div class="date-pill" data-date="2026-07-21"><span class="d">Mar 21</span>juil.</div>
-				<div class="date-pill" data-date="2026-07-22"><span class="d">Mer 22</span>juil.</div>
-				<div class="date-pill" data-date="2026-07-23"><span class="d">Jeu 23</span>juil.</div>
-				<div class="date-pill" data-date="2026-07-24"><span class="d">Ven 24</span>juil.</div>
-				<div class="date-pill" data-date="2026-07-25"><span class="d">Sam 25</span>juil.</div>
-				<div class="date-pill" data-date="2026-07-26"><span class="d">Dim 26</span>juil.</div>
+				{#each weekDays as day (day.iso)}
+					<button type="button" class="date-pill" class:selected={isSameDay(day.date, selectedDate)} onclick={() => (selectedDate = day.date)}>
+						<span class="d">{day.topLabel}</span>
+						<span class="m">{day.monthLabel}</span>
+					</button>
+				{/each}
 			</div>
 
-			<h3 style="margin: 28px 0 4px;" id="grid-title">Créneaux — Court 1, lundi 21 juillet</h3>
+			<h3 style="margin: 28px 0 4px;" id="grid-title">Créneaux — Salle de la Forge, {selectedDate.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long"})}</h3>
 
 			<div class="slot-legend">
 				<span class="legend-item"><span class="legend-swatch swatch-free"></span>Libre — cliquer pour bloquer</span>
@@ -63,44 +145,57 @@
 				<span class="legend-item"><span class="legend-swatch swatch-unavailable"></span>Bloqué — cliquer pour débloquer</span>
 			</div>
 
-			<div class="slot-grid" id="admin-slot-grid">
-				<div class="slot slot-blockable" data-heure="9">9h – 10h</div>
-				<div class="slot slot-blockable" data-heure="10">10h – 11h</div>
-				<div class="slot slot-blockable" data-heure="11">11h – 12h</div>
-				<div class="slot slot-blockable" data-heure="12">12h – 13h</div>
-				<div class="slot slot-blockable" data-heure="14">14h – 15h</div>
-				<div class="slot slot-blockable" data-heure="15">15h – 16h</div>
-				<div class="slot slot-blockable" data-heure="16">16h – 17h</div>
-				<div class="slot slot-blockable" data-heure="17">17h – 18h</div>
-				<div class="slot slot-blockable" data-heure="18">18h – 19h</div>
-				<div class="slot slot-blockable" data-heure="19">19h – 20h</div>
-				<div class="slot slot-blockable" data-heure="20">20h – 21h</div>
-				<div class="slot slot-blockable" data-heure="21">21h – 22h</div>
+			<div class="slot-grid">
+				{#each { length: END_HOURS - START_HOURS } as _, i}
+					{@const blocked = getBlockedSlot(START_HOURS + i)}
+					<button type="button" class="slot" class:slot-blockable={!blocked} class:slot-unavailable={!!blocked} disabled={!!blocked} onclick={() => {selectedHour = START_HOURS + i; showBlockModal = true;}}>
+						{START_HOURS + i}h – {START_HOURS + i + 1}h
+						{#if blocked?.raison}
+							<em class="slot-reason">{blocked.raison}</em>
+						{/if}
+					</button>
+				{/each}
 			</div>
 		</div>
 	</div>
 </section>
 
-<!-- Modale de blocage d'un créneau -->
-<div class="modal-overlay" id="block-modal-overlay" hidden>
+{#if showBlockModal}
+<div class="modal-overlay">
 	<div class="modal" role="dialog" aria-modal="true" aria-labelledby="block-modal-title">
 		<div class="modal-head">
 			<h3 id="block-modal-title">Bloquer un créneau</h3>
-			<button type="button" class="modal-close" id="block-modal-close" aria-label="Fermer">&times;</button>
+			<button type="button" class="modal-close" aria-label="Fermer" onclick={() => showBlockModal = false}>&times;</button>
 		</div>
-		<form id="block-form">
-			<p class="modal-slot-label"><span id="block-form-court-label">Court 2 · Intérieur</span> — <strong id="block-form-slot-label">10h – 11h</strong></p>
+		<form method="POST" action="?/block" use:enhance={() => {
+			return async ({ result, update }) => {
+				if (result.type === "success") {
+					showBlockModal = false;
+					selectedHour = 0;
+					showToast("Indisponibilité ajoutée");
+				} else if (result.type === "failure") {
+					const data = result.data as { error?: string } | undefined;
+					const errorMessage = data?.error || "Erreur server";
+					showToast(errorMessage, "error");
+				}
+				update();
+			};
+		}}>
+			<input type="hidden" name="selectedHour" value={selectedHour}>
+			<input type="hidden" name="selectedDate" value={selectedDate.toLocaleDateString("en-CA")}>
+			<p class="modal-slot-label"><span id="block-form-court-label">Salle de la Forge · Intérieur</span> — <strong id="block-form-slot-label">{selectedHour}h – {selectedHour + 1}h</strong></p>
 			<div class="form-group">
 				<label for="block-raison">Raison du blocage</label>
 				<input type="text" name="raison" id="block-raison" placeholder="Ex: Entretien, cours collectif, tournoi…" required>
 			</div>
 			<div class="form-group form-group-submit">
 				<button type="submit" class="btn-primary">Bloquer ce créneau</button>
-				<button type="button" class="btn-outline btn-small" id="block-form-cancel">Annuler</button>
+				<button type="button" class="btn-outline btn-small" onclick={() => showBlockModal = false}>Annuler</button>
 			</div>
 		</form>
 	</div>
 </div>
+{/if}
 
 <!-- Modale de déblocage d'un créneau -->
 <div class="modal-overlay" id="unblock-modal-overlay" hidden>
@@ -265,3 +360,56 @@
 		</div>
 	</div>
 </section>
+
+<style>
+	button.date-pill {
+		display: block;
+		font: inherit;
+		font-size: 100;
+		line-height: inherit;
+		text-align: inherit;
+		appearance: none;
+		-webkit-appearance: none;
+	}
+
+	.date-pill .m {
+		display: block;
+		font-size: 0.85rem;
+		font-weight: 400;
+		opacity: 0.9;
+		margin-top: 2px;
+	}
+
+	.week-nav-btn:disabled {
+		opacity: 0.38;
+		pointer-events: none;
+		background-color: transparent;
+		border-color: #DAD2B8;
+		color: var(--ink-soft, #5C6860);
+		transform: none;
+		box-shadow: none;
+		cursor: not-allowed;
+	}
+
+	button.slot {
+		display: block;
+		width: 100%;
+		margin: 0;
+		color: inherit;
+		font-family: inherit;
+		appearance: none;
+		-webkit-appearance: none;
+	}
+
+	button.slot.slot-unavailable {
+		background: repeating-linear-gradient(45deg, #EFEBDD, #EFEBDD 6px, #E3DCC4 6px, #E3DCC4 12px);
+		color: var(--ink-soft);
+		cursor: not-allowed;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 2px;
+		padding: 8px 4px;
+	}
+</style>
