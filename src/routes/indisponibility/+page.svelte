@@ -71,7 +71,12 @@
 	let blockedMap = $derived.by(() => {
 		const map = new Map<string, Indisponibilite>();
 
-		for (const item of data.indisponibilites ?? []) {
+		const sorted = [...(data.indisponibilites ?? [])].sort((a, b) => {
+			const diffDate = new Date(a.dateDebut).getTime() - new Date(b.dateDebut).getTime();
+			return diffDate !== 0 ? diffDate : a.courtId - b.courtId;
+		});
+
+		for (const item of sorted) {
 			const d = new Date(item.dateDebut);
 			const dateKey = d.toLocaleDateString("en-CA");
 			const hour = d.getHours();
@@ -85,6 +90,10 @@
 		const dateKey = selectedDate.toLocaleDateString("en-CA");
 		return blockedMap.get(`1-${dateKey}-${hour}`) ?? null;
 	}
+
+	let showUnblockHour = $state(false);
+	let unblockHourSelected = $state<Indisponibilite | null>(null);
+	let longDate = $derived(unblockHourSelected?.dateDebut.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) ?? "");
 </script>
 
 <svelte:head>
@@ -148,7 +157,16 @@
 			<div class="slot-grid">
 				{#each { length: END_HOURS - START_HOURS } as _, i}
 					{@const blocked = getBlockedSlot(START_HOURS + i)}
-					<button type="button" class="slot" class:slot-blockable={!blocked} class:slot-unavailable={!!blocked} disabled={!!blocked} onclick={() => {selectedHour = START_HOURS + i; showBlockModal = true;}}>
+					<button type="button" class="slot" class:slot-blockable={!blocked} class:slot-unavailable={!!blocked} onclick={() => {
+						if (!blocked) {
+							selectedHour = START_HOURS + i;
+							showBlockModal = true;
+						}
+						else {
+							unblockHourSelected = blocked;
+							showUnblockHour = true;
+						}
+					}}>
 						{START_HOURS + i}h – {START_HOURS + i + 1}h
 						{#if blocked?.raison}
 							<em class="slot-reason">{blocked.raison}</em>
@@ -197,22 +215,34 @@
 </div>
 {/if}
 
-<!-- Modale de déblocage d'un créneau -->
-<div class="modal-overlay" id="unblock-modal-overlay" hidden>
+{#if showUnblockHour}
+<div class="modal-overlay">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="unblock-modal-title">
         <div class="modal-head">
             <h3 id="unblock-modal-title">Débloquer un créneau</h3>
-            <button type="button" class="modal-close" id="unblock-modal-close" aria-label="Fermer">&times;</button>
+            <button type="button" class="modal-close" aria-label="Fermer" onclick={() => showUnblockHour = false}>&times;</button>
         </div>
-        <form id="unblock-form">
-            
-            <!-- Encart d'informations structuré -->
+        <form method="POST" action="?/unblock" use:enhance={() => {
+			return async ({ result, update }) => {
+				if (result.type === "success") {
+					showUnblockHour = false;
+					unblockHourSelected = null;
+					showToast("Indisponibilité supprimée");
+				} else if (result.type === "failure") {
+					const data = result.data as { error?: string } | undefined;
+					const errorMessage = data?.error || "Erreur server";
+					showToast(errorMessage, "error");
+				}
+				update();
+			};
+		}}>
+			<input type="hidden" name="indispoId" value={unblockHourSelected?.id} />
             <div style="background-color: rgba(0, 0, 0, 0.03); border-left: 4px solid var(--clay); padding: 16px; margin-bottom: 20px; border-radius: 4px;">
                 <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.8; color: #333;">
-                    <li><strong>Court :</strong> <span id="unblock-info-court">...</span></li>
-                    <li><strong>Date :</strong> <span id="unblock-info-date">...</span></li>
-                    <li><strong>Créneau :</strong> <span id="unblock-info-heure">...</span></li>
-                    <li><strong>Raison :</strong> <span id="unblock-info-raison">...</span></li>
+                    <li><strong>Court :</strong> <span id="unblock-info-court">Salle de la Forge</span></li>
+                    <li><strong>Date :</strong> <span id="unblock-info-date">{longDate.charAt(0).toUpperCase() + longDate.slice(1)}</span></li>
+                    <li><strong>Créneau :</strong> <span id="unblock-info-heure">{unblockHourSelected?.dateDebut.getHours() ?? 0}h - {(unblockHourSelected?.dateDebut.getHours() ?? 0) + 1}h</span></li>
+                    <li><strong>Raison :</strong> <span id="unblock-info-raison">{unblockHourSelected?.raison}</span></li>
                 </ul>
             </div>
 
@@ -225,11 +255,12 @@
             
             <div class="form-group form-group-submit" style="margin-top: 24px;">
                 <button type="submit" class="btn-primary">Confirmer le déblocage</button>
-                <button type="button" class="btn-outline btn-small" id="unblock-form-cancel">Annuler</button>
+                <button type="button" class="btn-outline btn-small" onclick={() => showUnblockHour = false}>Annuler</button>
             </div>
         </form>
     </div>
 </div>
+{/if}
 
 <!-- Modale d'ajout d'une indisponibilité récurrente -->
 <div class="modal-overlay" id="recurring-modal-overlay" hidden>
@@ -341,7 +372,7 @@
 		<div class="block-head" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
             <div>
 			    <h3 style="margin-bottom: 4px;">Indisponibilités à venir</h3>
-			    <span class="block-count">0 créneau bloqué</span>
+			    <span class="block-count">{blockedMap.size} créneau{blockedMap.size > 1 ? "s" : ""} bloqué{blockedMap.size > 1 ? "s" : ""}</span>
             </div>
             <div class="dispo-actions-row">
                 <button type="button" class="btn-outline btn-small" id="open-recurring-modal">+ Bloquer un créneau récurrent</button>
@@ -356,7 +387,22 @@
 				<span>Raison</span>
 				<span>Actions</span>
 			</div>
-			<div id="dispo-list"></div>
+			{#if blockedMap.size > 0}
+			<div id="dispo-list">
+			{#each blockedMap as [key, item] (key)}
+				{@const longDate = item.dateDebut.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+				<div class="dispo-table-row">
+					<span class="block-court">Salle de la Forge · Intérieur</span>
+					<span class="block-date">{longDate.charAt(0).toUpperCase() + longDate.slice(1)}</span>
+					<span class="block-hours">{item.dateDebut.getHours()}h - {item.dateDebut.getHours() + 1}h</span>
+					<span class="block-reason">{item.raison}</span>
+					<span class="admin-actions">
+						<button type="button" class="btn-outline btn-small delete-btn" onclick={() => {showUnblockHour = true; unblockHourSelected = item;}}>Débloquer</button>
+					</span>
+				</div>
+			{/each}
+			</div>
+			{/if}
 		</div>
 	</div>
 </section>
@@ -404,7 +450,6 @@
 	button.slot.slot-unavailable {
 		background: repeating-linear-gradient(45deg, #EFEBDD, #EFEBDD 6px, #E3DCC4 6px, #E3DCC4 12px);
 		color: var(--ink-soft);
-		cursor: not-allowed;
 		display: flex;
 		flex-direction: column;
 		align-items: center;

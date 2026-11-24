@@ -43,5 +43,17 @@ export const actions: Actions = {
             });
             return { success: true };
         } catch (error) { throw error }
+    },
+    unblock: async ({ request, locals }) => {
+        if (!locals.user || NOT_ADMIN.includes(locals.user.role)) return fail(403, "Non autorisé");
+
+        const formData = await request.formData();
+        const indispoId = Number(formData.get("indispoId") ?? 0);
+        if (indispoId === 0) return fail(400, { error: "Identifiant de l'indisponibilité introuvable" });
+
+        try {
+            await prisma.indisponibilite.delete({ where: { id: indispoId } });
+            return { success: true };
+        } catch (error) { throw error }
     }
 };
